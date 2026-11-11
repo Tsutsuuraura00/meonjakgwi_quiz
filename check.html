@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>제초 검정 · 확인번호 조회</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF6EA; --surface:#FFFFFF; --ink:#2C3829; --muted:#66745F;
+  --grass:#4F9441; --grass-soft:#DCEED4; --pink:#F4B3C2;
+  --line:#CFE0C6; --wrong:#B5462F; --wrong-soft:#FBE6E0;
+  color-scheme: light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#172014; --surface:#212C1E; --ink:#E6EFE1; --muted:#A3B39B;
+    --grass:#8CCB7B; --grass-soft:#2C3D27; --pink:#F2A7B8;
+    --line:#34452F; --wrong:#FF9A82; --wrong-soft:#3B2622; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#172014; --surface:#212C1E; --ink:#E6EFE1; --muted:#A3B39B;
+  --grass:#8CCB7B; --grass-soft:#2C3D27; --pink:#F2A7B8;
+  --line:#34452F; --wrong:#FF9A82; --wrong-soft:#3B2622; color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",sans-serif; font-size:17px; line-height:1.65}
+main{max-width:640px; margin:0 auto; padding:32px 20px 48px}
+h1{font-family:"Jua",sans-serif; font-weight:400; font-size:2rem; line-height:1.2; margin:0 0 8px}
+.lead{color:var(--muted); margin:0 0 24px}
+.sheet{background:var(--surface); border:2px solid var(--line); border-radius:18px; padding:22px}
+label{display:block; font-size:.95rem; color:var(--muted); margin-bottom:8px}
+textarea{width:100%; min-height:160px; resize:vertical; font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:.92rem; color:var(--ink); background:var(--bg); border:2px solid var(--line); border-radius:12px; padding:12px 14px}
+textarea:focus{outline:none; border-color:var(--grass)}
+.btn{font-family:"Jua",sans-serif; font-size:1.1rem; background:var(--grass); color:var(--surface); border:0; border-radius:999px; padding:11px 24px; margin-top:16px; cursor:pointer}
+.btn.ghost{background:transparent; color:var(--muted); border:2px solid var(--line); margin-left:8px}
+.btn:focus-visible{outline:3px solid var(--pink); outline-offset:3px}
+.results{list-style:none; padding:0; margin:20px 0 0; display:grid; gap:10px}
+.results li{border-radius:14px; padding:12px 16px; border-left:5px solid; background:var(--surface)}
+.results li.ok{border-color:var(--grass); background:var(--grass-soft)}
+.results li.no{border-color:var(--wrong); background:var(--wrong-soft)}
+.results b{font-family:"Jua",sans-serif; font-weight:400; font-size:1.1rem}
+.results .src{display:block; font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:.82rem; color:var(--muted); word-break:break-all; margin-top:2px}
+.summary{margin:18px 0 0; color:var(--muted)}
+h2{font-family:"Jua",sans-serif; font-weight:400; font-size:1.6rem; margin:48px 0 6px}
+.row{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:16px}
+.row input{width:80px; font:inherit; color:var(--ink); background:var(--bg); border:2px solid var(--line); border-radius:12px; padding:9px 12px}
+.row .btn{margin-top:0}
+.winners{margin-top:16px; padding:16px 18px; border-radius:14px; background:var(--grass-soft); border-left:5px solid var(--grass)}
+.winners b{font-family:"Jua",sans-serif; font-weight:400; font-size:1.15rem}
+.winners ol{margin:8px 0 0; padding-left:1.4em}
+</style>
+</head>
+<body>
+<main>
+  <h1>확인번호 조회</h1>
+  <p class="lead">운영진용 페이지예요. 등업 신청글의 <code>[등업퀴즈]</code> 문구를 붙여넣고 확인을 누르세요. 여러 명 것을 한 줄씩 한꺼번에 붙여넣어도 돼요.</p>
+  <div class="sheet">
+    <label for="input">신청 문구</label>
+    <textarea id="input" placeholder="[등업퀴즈] 닉네임 | 제초5급→제초4급 | ABC-DEF"></textarea>
+    <button class="btn" id="checkBtn" type="button">확인</button><button class="btn ghost" id="clearBtn" type="button">지우기</button>
+  </div>
+  <p class="summary" id="summary" hidden></p>
+  <ul class="results" id="results"></ul>
+
+  <h2>이벤트 응모 확인 · 추첨</h2>
+  <p class="lead">모의고사 만점 이벤트용이에요. 구글폼 응답 시트에서 <b>닉네임</b>과 <b>응모 코드</b> 열을 함께 복사해 붙여넣으세요. 타임스탬프 열이 같이 들어와도 괜찮아요.</p>
+  <div class="sheet">
+    <label for="evInput">응답 붙여넣기</label>
+    <textarea id="evInput" placeholder="닉네임	EV-ABCD-EFGH"></textarea>
+    <button class="btn" id="evCheck" type="button">응모 확인</button>
+  </div>
+  <p class="summary" id="evSummary" hidden></p>
+  <ul class="results" id="evResults"></ul>
+  <div class="sheet" id="drawBox" hidden style="margin-top:20px">
+    <label>유효한 응모자 중에서 무작위로 추첨해요.</label>
+    <div class="row">
+      <input id="drawN" type="number" min="1" value="1" aria-label="당첨 인원"> 명
+      <button class="btn" id="drawBtn" type="button">추첨하기</button>
+    </div>
+    <div class="winners" id="winners" hidden></div>
+  </div>
+</main>
+
+<script>
+// index.html과 반드시 같은 값이어야 합니다
+const LEVELS = [["제초5급","제초4급"],["제초4급","제초3급"],["제초3급","제초2급"],["제초2급","제초1급"],["제초1급","토벌랭킹1등"]];
+const SALT = "zecho-kentei-2026";
+const VALID_DAYS = 7;
+
+function kstDate(offsetDays = 0){
+  return new Date(Date.now() + 9*3600e3 - offsetDays*86400e3).toISOString().slice(0,10).replace(/-/g,"");
+}
+async function makeCode(name, li, ymd){
+  const norm = name.replace(/\s+/g,"").toLowerCase();
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${norm}|${li}|${ymd}|${SALT}`));
+  const h = new Uint8Array(buf), A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = "";
+  for(let i=0;i<6;i++) s += A[h[i] % 32];
+  return s.slice(0,3) + "-" + s.slice(3);
+}
+function fmt(ymd){ return `${+ymd.slice(4,6)}월 ${+ymd.slice(6,8)}일`; }
+
+async function checkLine(raw){
+  const parts = raw.split("|").map(x => x.trim());
+  if(parts.length < 3) return {ok:false, msg:"형식이 맞지 않아요 (닉네임 | 구간 | 확인번호)"};
+  const name = parts[0].replace(/\[?등업퀴즈\]?/,"").trim();
+  const lvText = parts[1].replace(/\s+/g,"").replace(/->|=>|>/g,"→");
+  const li = LEVELS.findIndex(([f,t]) => lvText === f + "→" + t);
+  const codeRaw = parts[2].toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(!name) return {ok:false, msg:"닉네임이 비어 있어요"};
+  if(li < 0) return {ok:false, msg:"등업 구간을 알아볼 수 없어요"};
+  if(codeRaw.length !== 6) return {ok:false, msg:"확인번호 형식이 맞지 않아요"};
+  const code = codeRaw.slice(0,3) + "-" + codeRaw.slice(3);
+  for(let d = 0; d < VALID_DAYS; d++){
+    const ymd = kstDate(d);
+    if(await makeCode(name, li, ymd) === code){
+      return {ok:true, msg:`${name} · ${LEVELS[li][0]}→${LEVELS[li][1]} · ${fmt(ymd)} 합격`};
+    }
+  }
+  return {ok:false, msg:`${name} · 확인번호가 맞지 않거나 ${VALID_DAYS}일이 지났어요`};
+}
+
+document.getElementById("checkBtn").addEventListener("click", async () => {
+  const lines = document.getElementById("input").value.split(/\n/).map(x => x.trim()).filter(x => x.includes("|"));
+  const ul = document.getElementById("results"); ul.innerHTML = "";
+  const sum = document.getElementById("summary");
+  if(!lines.length){ sum.hidden = false; sum.textContent = "확인할 문구가 없어요. [등업퀴즈]로 시작하는 줄을 붙여넣어 주세요."; return; }
+  let ok = 0;
+  for(const line of lines){
+    const r = await checkLine(line); if(r.ok) ok++;
+    const li = document.createElement("li"); li.className = r.ok ? "ok" : "no";
+    const b = document.createElement("b"); b.textContent = (r.ok ? "✅ 승인 가능 · " : "❌ 확인 불가 · ") + r.msg;
+    const src = document.createElement("span"); src.className = "src"; src.textContent = line;
+    li.append(b, src); ul.appendChild(li);
+  }
+  sum.hidden = false; sum.textContent = `${lines.length}건 중 ${ok}건 확인됐어요.`;
+});
+// ── 이벤트 응모 코드 (모의고사 사이트와 같은 값이어야 합니다) ──
+const EVENT_ID = "event-01";
+const EVENT_SALT = "meonjakgwi-perfect";
+async function makeEventCode(name){
+  const norm = name.replace(/\s+/g,"").toLowerCase();
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${norm}|${EVENT_ID}|${EVENT_SALT}`));
+  const h = new Uint8Array(buf), A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let c = "";
+  for(let i=0;i<8;i++) c += A[h[i] % 32];
+  return `EV-${c.slice(0,4)}-${c.slice(4)}`;
+}
+let validEntrants = [];
+document.getElementById("evCheck").addEventListener("click", async () => {
+  const lines = document.getElementById("evInput").value.split(/\n/).map(x => x.trim()).filter(Boolean);
+  const ul = document.getElementById("evResults"); ul.innerHTML = "";
+  const seen = new Set(); validEntrants = []; let bad = 0, dup = 0;
+  for(const line of lines){
+    const parts = line.split(/\t|\||,|\s\/\s/).map(x => x.trim()).filter(Boolean);
+    const ci = parts.findIndex(x => /^EV-?[A-Z0-9]{4}-?[A-Z0-9]{4}$/i.test(x.replace(/\s/g,"")));
+    let ok = false, msg;
+    if(ci < 0){ msg = "응모 코드를 찾을 수 없어요"; }
+    else{
+      const name = ci > 0 ? parts[ci-1] : (parts[1] || "");
+      const raw = parts[ci].toUpperCase().replace(/[^A-Z0-9]/g,"").replace(/^EV/,"");
+      const code = `EV-${raw.slice(0,4)}-${raw.slice(4)}`;
+      const key = name.replace(/\s+/g,"").toLowerCase();
+      if(!name){ msg = "닉네임이 비어 있어요"; }
+      else if(await makeEventCode(name) !== code){ msg = `${name} · 닉네임과 코드가 맞지 않아요`; }
+      else if(seen.has(key)){ dup++; msg = `${name} · 중복 응모 (한 번만 인정)`; }
+      else { ok = true; seen.add(key); validEntrants.push(name); msg = `${name} · 유효한 응모`; }
+    }
+    if(!ok) bad++;
+    const li = document.createElement("li"); li.className = ok ? "ok" : "no";
+    const b = document.createElement("b"); b.textContent = (ok ? "✅ " : "❌ ") + msg;
+    const src = document.createElement("span"); src.className = "src"; src.textContent = line;
+    li.append(b, src); ul.appendChild(li);
+  }
+  const sum = document.getElementById("evSummary"); sum.hidden = false;
+  sum.textContent = lines.length ? `${lines.length}건 중 유효 ${validEntrants.length}명${dup ? `, 중복 ${dup}건` : ""}${bad - dup > 0 ? `, 확인 불가 ${bad - dup}건` : ""}` : "붙여넣은 내용이 없어요.";
+  document.getElementById("drawBox").hidden = validEntrants.length === 0;
+  document.getElementById("winners").hidden = true;
+});
+document.getElementById("drawBtn").addEventListener("click", () => {
+  const n = Math.max(1, Math.min(validEntrants.length, +document.getElementById("drawN").value || 1));
+  const pool = validEntrants.slice();
+  for(let i = pool.length - 1; i > 0; i--){ const r = new Uint32Array(1); crypto.getRandomValues(r); const j = r[0] % (i + 1); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const box = document.getElementById("winners"); box.innerHTML = "";
+  const b = document.createElement("b"); b.textContent = `당첨자 ${n}명 (응모 ${validEntrants.length}명 중)`;
+  const ol = document.createElement("ol"); pool.slice(0, n).forEach(name => { const li = document.createElement("li"); li.textContent = name; ol.appendChild(li); });
+  box.append(b, ol); box.hidden = false;
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  document.getElementById("input").value = ""; document.getElementById("results").innerHTML = "";
+  document.getElementById("summary").hidden = true;
+});
+</script>
+</body>
+</html>
